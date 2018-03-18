@@ -3,18 +3,24 @@
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.rxkotlin.toObservable
 import java.io.File
+import java.util.*
 
 fun main(args : Array<String>) {
+    currentMode.push("START")
     val parseRes= mutableListOf<Token>()
-    transitionMap["000"]=Transition("EOL",Regex("^($)(.)"))
-    transitionMap["001"]=Transition("COMMENT",Regex("^[ ]*(#.*)($)"))
-    transitionMap["002"]=Transition("BLANKS",Regex("^([ \\t]+)(.*?)"))
-    transitionMap["003"]=Transition("VERSIONNUM",Regex("^([0-9]+[\\.][0-9]+[\\.][0-9]+)(.*?)"))
-    transitionMap["004"]=Transition("NUMBER",Regex("^([0-9]+[\\.][0-9]+)(.*?)"))
-    transitionMap["005"]=Transition("ID",Regex("^([a-zA-Z0-9]+)(.*?)"))
-    transitionMap["006"]=Transition("SEP",Regex("^([|]|$)(.*?)"))
-    transitionMap["007"]=Transition("COLON",Regex("^(:)(.*?)"))
-    CurrentMode["START"]=transitionMap
+    GlobalRegexMap["001"]=Transition("COMMENT",Regex("^[ ]*(#.*)($)"))
+    GlobalRegexMap["002"]=Transition("BLANKS",Regex("^([ \\t]+)(.*?)"))
+    GlobalRegexMap["003"]=Transition("VERSIONNUM",Regex("^([0-9]+[\\.][0-9]+[\\.][0-9]+)(.*?)"))
+    GlobalRegexMap["004"]=Transition("NUMBER",Regex("^([0-9]+[\\.][0-9]+)(.*?)"))
+    GlobalRegexMap["005"]=Transition("CAMPAIGN",Regex("^(CAMPAIGN:)(.*?)"))
+    GlobalRegexMap["006"]=Transition("ID",Regex("^([a-zA-Z0-9]+)(.*?)"))
+    GlobalRegexMap["007"]=Transition("SEP",Regex("^([|])(.*?)"))
+    GlobalRegexMap["008"]=Transition("COLON",Regex("^(:)(.*?)"))
+//    CampaignRegexMap["000"]=Transition("COLON",Regex("^(:)(.*?)"))
+    CampaignRegexMap["001"]=Transition("CAMPAIGNSTRING",Regex("^([^|]+)(.*?)"))
+    CampaignRegexMap["002"]=Transition("SEP",Regex("^([|])(.*?)"))
+    CurrentMode["START"]=GlobalRegexMap
+    CurrentMode["CAMPAIGNMODE"]=CampaignRegexMap
     val inFile= File("./src/main/java/Twitchy-13t6-short.pcg")
     var LineNum=0
     var Column=0
@@ -22,21 +28,24 @@ fun main(args : Array<String>) {
         LineNum++
         var Line:String?=it
         while (Line!=null) {
-            if (Line.equals("")) {
+            val t=if (Line.equals("")) {
                 Line=null
                 val t=Transition("EOL",Regex(""))
-                parseRes.add(parseRes.size,Token("EOL",LineNum,Column,CurrentMode["START"]?.get(t.name)))
-                println("EOL")
+                parseRes.add(parseRes.size,Token("EOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
+                matchRes("","","000","EOL")
             } else {
                 var work = ""
-                val t = findBestMatch(Line, CurrentMode["START"])
-                println(Line)
-                if (CurrentMode["START"]?.get(t.name) != null) {
-
-                    println("Token=${t.data} Rule=${t.name} Name=${CurrentMode["START"]?.get(t.name)?.name}")
-                }
+                val t = findBestMatch(Line, CurrentMode[currentMode.peek()])
                 Line = t.remaining
-                parseRes.add(parseRes.size,Token(t.data,LineNum,Column,CurrentMode["START"]?.get(t.name)))
+                parseRes.add(parseRes.size,Token(t.data,LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
+                t
+            }
+            if (tmap[currentMode.peek()]?.get(t.trans)!=null) {
+                if (tmap[currentMode.peek()]?.get(t.trans).equals("__return__")) {
+                    currentMode.pop()
+                } else {
+                    currentMode.push(tmap[currentMode.peek()]?.get(t.trans))
+                }
             }
 
         }
@@ -55,15 +64,17 @@ data class Transition(val name:String,val m:Regex)
 
 data class Token(val Value:String, val line:Int, val col:Int, val Tran: Transition?)
 
-data class matchRes(val data:String,val remaining:String,val name:String)
+data class matchRes(val data:String,val remaining:String,val name:String,val trans:String)
 
 fun findBestMatch(IN: String, m: HashMap<String, Transition>?):matchRes {
     var longest=-1
-    println("Checking -->${IN}<->${m}<-")
     m?.keys?.forEach {
-        println("-->${m?.get(it)}")
         val t= m?.get(it)
-
+        val transname=if (t!=null) {
+            t.name
+        } else {
+            ""
+        }
         if (t != null) {
             val temp3=t.m.matchEntire(IN)
             if (temp3!=null) {
@@ -79,13 +90,13 @@ fun findBestMatch(IN: String, m: HashMap<String, Transition>?):matchRes {
                     ""
                 }
                 if (matching!=null && matching.length>longest) {
-                    return matchRes(matching,remaining,it)
+                    return matchRes(matching,remaining,it,transname)
                 }
             }
         }
 
     }
-    val a=matchRes(IN,"","")
+    val a=matchRes(IN,"","","")
     return a
 }
 
@@ -95,14 +106,16 @@ fun keyValue(key: String,value: String): HashMap<String, String> {
     return ret
 }
 
+val currentMode= Stack<String>()
 
-val transitionMap=hashMapOf<String,Transition>()
+val GlobalRegexMap=hashMapOf<String,Transition>()
+val CampaignRegexMap=hashMapOf<String,Transition>()
 
 var CurrentMode= hashMapOf<String,HashMap<String,Transition>>()
 
 val tmap= hashMapOf<String,HashMap<String,String>>(
         Pair("START",keyValue("CAMPAIGN","CAMPAIGNMODE")),
-        Pair("CAMPAIGNMODE",keyValue("EOL","START"))
+        Pair("CAMPAIGNMODE",keyValue("EOL","__return__"))
 
 )
 
