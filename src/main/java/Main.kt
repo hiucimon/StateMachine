@@ -16,7 +16,6 @@ fun main(args : Array<String>) {
     GlobalRegexMap["006"]=Transition("ID",Regex("^([a-zA-Z0-9]+)(.*?)"))
     GlobalRegexMap["007"]=Transition("SEP",Regex("^([|])(.*?)"))
     GlobalRegexMap["008"]=Transition("COLON",Regex("^(:)(.*?)"))
-//    CampaignRegexMap["000"]=Transition("COLON",Regex("^(:)(.*?)"))
     CampaignRegexMap["001"]=Transition("CAMPAIGNSTRING",Regex("^([^|]+)(.*?)"))
     CampaignRegexMap["002"]=Transition("SEP",Regex("^([|])(.*?)"))
     CurrentMode["START"]=GlobalRegexMap
@@ -24,6 +23,7 @@ fun main(args : Array<String>) {
     val inFile= File("./src/main/java/Twitchy-13t6-short.pcg")
     var LineNum=0
     var Column=0
+    parseRes.add(parseRes.size,Token("BOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get("START")))
     inFile.forEachLine {
         LineNum++
         var Line:String?=it
@@ -32,6 +32,7 @@ fun main(args : Array<String>) {
                 Line=null
                 val t=Transition("EOL",Regex(""))
                 parseRes.add(parseRes.size,Token("EOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
+                parseRes.add(parseRes.size,Token("BOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
                 matchRes("","","000","EOL")
             } else {
                 var work = ""
