@@ -51,6 +51,8 @@ fun main(args : Array<String>) {
 
         }
     }
+    val t=parseRes[parseRes.lastIndex].Tran
+    parseRes[parseRes.lastIndex]=Token("EOF",LineNum,Column,t)
     val tokenStream=parseRes.toList().toObservable()
     tokenStream.subscribeBy(
             onNext = { println(it) },
