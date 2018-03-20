@@ -5,71 +5,52 @@ import io.reactivex.rxkotlin.toObservable
 import java.io.File
 import java.util.*
 
-fun main(args : Array<String>) {
-    currentMode.push("START")
-    val parseRes= mutableListOf<Token>()
-    GlobalRegexMap["001"]=Transition("COMMENT",Regex("^[ ]*(#.*)($)"))
-    GlobalRegexMap["002"]=Transition("BLANKS",Regex("^([ \\t]+)(.*?)"))
-    GlobalRegexMap["003"]=Transition("VERSIONNUM",Regex("^([0-9]+[\\.][0-9]+[\\.][0-9]+)(.*?)"))
-    GlobalRegexMap["004"]=Transition("NUMBER",Regex("^([0-9]+[\\.][0-9]+)(.*?)"))
-    GlobalRegexMap["005"]=Transition("CAMPAIGN",Regex("^(CAMPAIGN:)(.*?)"))
-    GlobalRegexMap["006"]=Transition("ID",Regex("^([a-zA-Z0-9]+)(.*?)"))
-    GlobalRegexMap["007"]=Transition("SEP",Regex("^([|])(.*?)"))
-    GlobalRegexMap["008"]=Transition("COLON",Regex("^(:)(.*?)"))
-    CampaignRegexMap["001"]=Transition("CAMPAIGNSTRING",Regex("^([^|]+)(.*?)"))
-    CampaignRegexMap["002"]=Transition("SEP",Regex("^([|])(.*?)"))
-    CurrentMode["START"]=GlobalRegexMap
-    CurrentMode["CAMPAIGNMODE"]=CampaignRegexMap
-    val inFile= File("./src/main/java/Twitchy-13t6-short.pcg")
-    var LineNum=0
-    var Column=0
-    parseRes.add(parseRes.size,Token("BOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get("START")))
-    inFile.forEachLine {
-        LineNum++
-        var Line:String?=it
-        while (Line!=null) {
-            val t=if (Line.equals("")) {
-                Line=null
-                val t=Transition("EOL",Regex(""))
-                parseRes.add(parseRes.size,Token("EOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
-                parseRes.add(parseRes.size,Token("BOL",LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
-                matchRes("","","000","EOL")
-            } else {
-                var work = ""
-                val t = findBestMatch(Line, CurrentMode[currentMode.peek()])
-                Line = t.remaining
-                parseRes.add(parseRes.size,Token(t.data,LineNum,Column,CurrentMode[currentMode.peek()]?.get(t.name)))
-                t
-            }
-            if (tmap[currentMode.peek()]?.get(t.trans)!=null) {
-                if (tmap[currentMode.peek()]?.get(t.trans).equals("__return__")) {
-                    currentMode.pop()
-                } else {
-                    currentMode.push(tmap[currentMode.peek()]?.get(t.trans))
-                }
-            }
+val __MODE_STACK__= Stack<String>()
 
-        }
-    }
-    val t=parseRes[parseRes.lastIndex].Tran
-    parseRes[parseRes.lastIndex]=Token("EOF",LineNum,Column,t)
-    val tokenStream=parseRes.toList().toObservable()
-    tokenStream.subscribeBy(
-            onNext = { println(it) },
-            onError = { it.printStackTrace() },
-            onComplete = { println("Done!") }
-    )
-}
+val __PARSE_RES__= mutableListOf<__TOKEN__>()
 
+data class __TRANSITION__(val name:String, val m:Regex)
 
+data class __TOKEN__(val Value:String, val line:Int, val col:Int, val tran: __TRANSITION__?)
 
-data class Transition(val name:String,val m:Regex)
+data class __MATCH_RESULTS__(val data:String, val remaining:String, val name:String, val trans:String)
 
-data class Token(val Value:String, val line:Int, val col:Int, val Tran: Transition?)
+val __TRANSITIONMAP__= hashMapOf<String,HashMap<String,String>>(
+        "START" to hashMapOf("CAMPAIGN" to "CAMPAIGNMODE"),
+        "CAMPAIGNMODE" to hashMapOf("EOL" to "__return__")
+)
 
-data class matchRes(val data:String,val remaining:String,val name:String,val trans:String)
+val __REGEX_STRINGS__=hashMapOf(
+        "001" to "#.*",
+        "002" to "[ \\t]+",
+        "003" to "[0-9]+[\\.][0-9]+[\\.][0-9]+",
+        "004" to "[0-9]+[\\.][0-9]+",
+        "005" to "CAMPAIGN:",
+        "006" to "[a-zA-Z0-9]+",
+        "007" to "[|]",
+        "008" to ":",
+        "009" to "[^|]+",
+        "010" to "[|]"
+)
 
-fun findBestMatch(IN: String, m: HashMap<String, Transition>?):matchRes {
+val __PARSE_MAP__=hashMapOf<String,HashMap<String,__TRANSITION__>>(
+        "START" to hashMapOf(
+                "001" to __TRANSITION__("COMMENT",         Regex("^(${__REGEX_STRINGS__["001"]})(.*?)")),
+                "002" to __TRANSITION__("BLANKS",          Regex("^(${__REGEX_STRINGS__["002"]})(.*?)")),
+                "003" to __TRANSITION__("VERSIONNUM",      Regex("^(${__REGEX_STRINGS__["003"]})(.*?)")),
+                "004" to __TRANSITION__("NUMBER",          Regex("^(${__REGEX_STRINGS__["004"]})(.*?)")),
+                "005" to __TRANSITION__("CAMPAIGN",        Regex("^(${__REGEX_STRINGS__["005"]})(.*?)")),
+                "006" to __TRANSITION__("ID",              Regex("^(${__REGEX_STRINGS__["006"]})(.*?)")),
+                "007" to __TRANSITION__("SEP",             Regex("^(${__REGEX_STRINGS__["007"]})(.*?)")),
+                "008" to __TRANSITION__("COLON",           Regex("^(${__REGEX_STRINGS__["008"]})(.*?)"))
+        ),
+        "CAMPAIGNMODE" to hashMapOf(
+                "001" to __TRANSITION__("CAMPAIGNSTRING",   Regex("^(${__REGEX_STRINGS__["009"]})(.*?)")),
+                "002" to __TRANSITION__("SEP",              Regex("^(${__REGEX_STRINGS__["010"]})(.*?)"))
+        )
+)
+
+fun __FIND_FIRST_MATCH__(IN: String, m: HashMap<String, __TRANSITION__>?):__MATCH_RESULTS__ {
     var longest=-1
     m?.keys?.forEach {
         val t= m?.get(it)
@@ -93,32 +74,56 @@ fun findBestMatch(IN: String, m: HashMap<String, Transition>?):matchRes {
                     ""
                 }
                 if (matching!=null && matching.length>longest) {
-                    return matchRes(matching,remaining,it,transname)
+                    return __MATCH_RESULTS__(matching,remaining,it,transname)
                 }
             }
         }
 
     }
-    val a=matchRes(IN,"","","")
+    val a=__MATCH_RESULTS__(IN,"","","")
     return a
 }
 
-fun keyValue(key: String,value: String): HashMap<String, String> {
-    val ret=hashMapOf<String,String>()
-    ret[key]=value
-    return ret
+fun main(args : Array<String>) {
+    __MODE_STACK__.push("START")
+    val inFile= File("./src/main/java/Twitchy-13t6-short.pcg")
+    var LineNum=0
+    var Column=0
+    __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("BOL",LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get("START")))
+    inFile.forEachLine {
+        LineNum++
+        var Line:String?=it
+        while (Line!=null) {
+            val t=if (Line.equals("")) {
+                Line=null
+                val t=__TRANSITION__("EOL",Regex(""))
+                __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("EOL",LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
+                __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("BOL",LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
+                __MATCH_RESULTS__("","","000","EOL")
+            } else {
+                var work = ""
+                val t = __FIND_FIRST_MATCH__(Line, __PARSE_MAP__[__MODE_STACK__.peek()])
+                Line = t.remaining
+                __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__(t.data,LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
+                t
+            }
+            if (__TRANSITIONMAP__[__MODE_STACK__.peek()]?.get(t.trans)!=null) {
+                if (__TRANSITIONMAP__[__MODE_STACK__.peek()]?.get(t.trans).equals("__return__")) {
+                    __MODE_STACK__.pop()
+                } else {
+                    __MODE_STACK__.push(__TRANSITIONMAP__[__MODE_STACK__.peek()]?.get(t.trans))
+                }
+            }
+
+        }
+    }
+    val t=__PARSE_RES__[__PARSE_RES__.lastIndex].tran
+    __PARSE_RES__[__PARSE_RES__.lastIndex]=__TOKEN__("EOF",LineNum,Column,t)
+    val tokenStream=__PARSE_RES__.toList().toObservable()
+    tokenStream.subscribeBy(
+            onNext = { println(it) },
+            onError = { it.printStackTrace() },
+            onComplete = { println("Done!") }
+    )
 }
-
-val currentMode= Stack<String>()
-
-val GlobalRegexMap=hashMapOf<String,Transition>()
-val CampaignRegexMap=hashMapOf<String,Transition>()
-
-var CurrentMode= hashMapOf<String,HashMap<String,Transition>>()
-
-val tmap= hashMapOf<String,HashMap<String,String>>(
-        Pair("START",keyValue("CAMPAIGN","CAMPAIGNMODE")),
-        Pair("CAMPAIGNMODE",keyValue("EOL","__return__"))
-
-)
 
