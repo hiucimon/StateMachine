@@ -88,17 +88,18 @@ fun main(args : Array<String>) {
     __MODE_STACK__.push("START")
     val inFile= File("./src/main/java/Twitchy-13t6-short.pcg")
     var LineNum=0
-    var Column=0
+    var Column=1
     __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("BOL",LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get("START")))
     inFile.forEachLine {
         LineNum++
+        Column=1
         var Line:String?=it
         while (Line!=null) {
             val t=if (Line.equals("")) {
                 Line=null
                 val t=__TRANSITION__("EOL",Regex(""))
                 __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("EOL",LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
-                __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("BOL",LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
+                __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__("BOL",LineNum,1,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
                 __MATCH_RESULTS__("","","000","EOL")
             } else {
                 var work = ""
@@ -107,6 +108,7 @@ fun main(args : Array<String>) {
                 __PARSE_RES__.add(__PARSE_RES__.size,__TOKEN__(t.data,LineNum,Column,__PARSE_MAP__[__MODE_STACK__.peek()]?.get(t.name)))
                 t
             }
+            Column=Column+t.data.length
             if (__TRANSITIONMAP__[__MODE_STACK__.peek()]?.get(t.trans)!=null) {
                 if (__TRANSITIONMAP__[__MODE_STACK__.peek()]?.get(t.trans).equals("__return__")) {
                     __MODE_STACK__.pop()
