@@ -3,16 +3,6 @@ package org.hiucimon.klex.pcgen_char
 import java.io.File
 import java.util.*
 
-val __REGEX_STRINGS__=hashMapOf<String,String>()
-
-val __PARSE_MAP__=hashMapOf<String, HashMap<String, __TRANSITION__>>()
-
-val __TRANSITIONMAP__= hashMapOf<String, HashMap<String, String>>()
-
-val __GLOBAL_VARS__= hashMapOf<String,Any>(
-        "INDEX" to 0
-)
-
 fun addAll(){
     __ADD_TRANSITION__("START","COMMENT","#.*")
     __ADD_TRANSITION__("START","BLANKS","[ \\t]+")
@@ -26,6 +16,15 @@ fun addAll(){
     __ADD_TRANSITION__("CAMPAIGNMODE","SEP","[|]")
     __ADD_TRANSITION__("CAMPAIGNMODE","EOL","[\r\n]","__return__")
 }
+
+val __REGEX_STRINGS__=hashMapOf<String,String>()
+
+val __PARSE_MAP__=hashMapOf<String, HashMap<String, __TRANSITION__>>()
+
+val __TRANSITIONMAP__= hashMapOf<String, HashMap<String, String>>()
+
+val __GLOBAL_VARS__= hashMapOf<String,Any>()
+
 fun __ADD_TRANSITION__(mode:String,name:String,regex:String,transitionto:String?=null) {
     if (transitionto!=null) {
         val s:String=transitionto
