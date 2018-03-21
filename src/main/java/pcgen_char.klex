@@ -5,23 +5,29 @@
 #
 # Apache 2.0 License
 #
+Mode            :   START;
+COMMENT         :   '#.*';
+BLANKS          :   '[ \\t]+';        # trailing comment
+VERSIONNUM      :   '[0-9]+[\\.][0-9]+[\\.][0-9]+';
+NUMBER          :   '[0-9]+[\\.][0-9]+';
+CAMPAIGN        :   'CAMPAIGN:'->pushMode(CAMPAIGNMODE);
+ID              :   '[a-zA-Z0-9]+';
+SEP             :   '[|]';
+COLON           :   '[:]';
 
-COMMENT         :   BOL [\s*] '#' .* EOL->Channel(Comment);
-BLANK           :   BOL [\s+] EOL->Channel(Comment);        # trailing comment
-SPACES          :   [ \t]+->Channel(Ignore);
-ID              :   [a-zA-Z0-9]+;
-SEP             :   '|'|EOL;
-COLON           :   ':';
-VERSIONNUM      :   NUM '.' NUM '.' NUM;
-DECIMAL         :   NUM '.' NUM;
-NUM             :   [0-9]+;
-CAMPAIGN        :   'CAMPAIGN';
-CampaignMode    :   CAMPAIGN COLON->PushMode(Campaign);
-
-
-
-
-
-Mode            :   Campaign;
-CampaignName    :   ~SEP+;
+Mode            :   CAMPAIGNMODE;
+CAMPAIGNSTRING  :   ~SEP+;
 END_CAMPAIGN    :   EOL->Return;
+
+
+#    __ADD_TRANSITION__("START","COMMENT","#.*")
+#    __ADD_TRANSITION__("START","BLANKS","[ \\t]+")
+#    __ADD_TRANSITION__("START","VERSIONNUM", "[0-9]+[\\.][0-9]+[\\.][0-9]+")
+#    __ADD_TRANSITION__("START","NUMBER", "[0-9]+[\\.][0-9]+")
+#    __ADD_TRANSITION__("START","CAMPAIGN","CAMPAIGN:","CAMPAIGNMODE")
+#    __ADD_TRANSITION__("START","ID","[a-zA-Z0-9]+")
+#    __ADD_TRANSITION__("START","SEP","[|]")
+#    __ADD_TRANSITION__("START","COLON",":")
+#    __ADD_TRANSITION__("CAMPAIGNMODE","CAMPAIGNSTRING","[^|]+")
+#    __ADD_TRANSITION__("CAMPAIGNMODE","SEP","[|]")
+#    __ADD_TRANSITION__("CAMPAIGNMODE","EOL","[\r\n]","__return__")

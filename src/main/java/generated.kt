@@ -11,7 +11,7 @@ fun addAll(){
     __ADD_TRANSITION__("START","CAMPAIGN","CAMPAIGN:","CAMPAIGNMODE")
     __ADD_TRANSITION__("START","ID","[a-zA-Z0-9]+")
     __ADD_TRANSITION__("START","SEP","[|]")
-    __ADD_TRANSITION__("START","COLON",":")
+    __ADD_TRANSITION__("START","COLON","[:]")
     __ADD_TRANSITION__("CAMPAIGNMODE","CAMPAIGNSTRING","[^|]+")
     __ADD_TRANSITION__("CAMPAIGNMODE","SEP","[|]")
     __ADD_TRANSITION__("CAMPAIGNMODE","EOL","[\r\n]","__return__")
