@@ -1,0 +1,44 @@
+#
+# V0.1 of klex Lexical system
+#
+ # Copywrite 2018, Joe Bryant
+#
+# Apache 2.0 License
+#
+Mode            :   START;
+COMMENT         :   '#.*';
+BLANKS          :   '[ \\t]+';        # trailing comment
+ID              :   '[a-zA-Z0-9]+';
+COLON           :   '[:]';
+SEMICOLON       :   '[;]';
+SQUOTE          :   '['']'->pushMode(SINGLEQUOTES);
+DQUOTE          :   '["]'->pushMode(DOUBLEQUOTE);
+ACTION          :   '->'->pushMode(ACTIONMODE);
+
+Mode            :   ACTIONMODE;
+PUSH            :   'pushMode\(';
+NEWMODE         :   '[a-zA-Z0-9]+';
+CLOSEPAREN      :   '[)]'->return;
+
+Mode            :   SINGLEQUOTES;
+SKIP            :   SQUOTE SQUOTE->"'";
+QUOTESTRING     :   ~SQUOTE+;
+END_SQUOTE      :   SQUOTE->Return;
+
+Mode            :   DOUBLEQUOTES;
+SKIP            :   DQUOTE DQUOTE->'"';
+QUOTESTRING     :   ~DQUOTE+;
+END_DQUOTE      :   DQUOTE->Return;
+
+
+#    __ADD_TRANSITION__("START","COMMENT","#.*")
+#    __ADD_TRANSITION__("START","BLANKS","[ \\t]+")
+#    __ADD_TRANSITION__("START","VERSIONNUM", "[0-9]+[\\.][0-9]+[\\.][0-9]+")
+#    __ADD_TRANSITION__("START","NUMBER", "[0-9]+[\\.][0-9]+")
+#    __ADD_TRANSITION__("START","CAMPAIGN","CAMPAIGN:","CAMPAIGNMODE")
+#    __ADD_TRANSITION__("START","ID","[a-zA-Z0-9]+")
+#    __ADD_TRANSITION__("START","SEP","[|]")
+#    __ADD_TRANSITION__("START","COLON",":")
+#    __ADD_TRANSITION__("CAMPAIGNMODE","CAMPAIGNSTRING","[^|]+")
+#    __ADD_TRANSITION__("CAMPAIGNMODE","SEP","[|]")
+#    __ADD_TRANSITION__("CAMPAIGNMODE","EOL","[\r\n]","__return__")

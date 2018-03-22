@@ -8,7 +8,7 @@ import org.hiucimon.klex.pcgen_char.addAll
 
 fun main(args : Array<String>) {
     addAll()
-    KLEX_PARSE("./src/main/java/Twitchy-13t6-short.pcg")
+    KLEX_PARSE("./src/main/java/klex.klex")
     val tokenStream=KLEX_TOKEN_LIST.toList().toObservable()
     tokenStream.subscribeBy(
             onNext = { println(it) },
